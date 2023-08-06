@@ -10,7 +10,27 @@ class Channel:
 
     def __init__(self, channel_id: str) -> None:
         """Экземпляр инициализируется id канала. Дальше все данные будут подтягиваться по API."""
-        self.channel_id = channel_id
+        youtube = build('youtube', 'v3', developerKey=api_key)
+        self.__channel_id = channel_id
+        channel = youtube.channels().list(id=self.__channel_id, part='snippet,statistics').execute()
+        info_channel = json.dumps(channel, indent=2, ensure_ascii=False)
+        info_channel_json = json.loads(info_channel)
+        self.title = info_channel_json['items'][0]['snippet']['title']
+        self.description = info_channel_json['items'][0]['snippet']['description']
+        self.url = 'https://www.youtube.com/channel/' + self.__channel_id
+        self.subs_count = info_channel_json['items'][0]['statistics']['subscriberCount']
+        self.video_count = info_channel_json['items'][0]['statistics']['videoCount']
+        self.view_count = info_channel_json['items'][0]['statistics']['viewCount']
+
+
+    @classmethod
+    def get_service(cls):
+        youtube = build('youtube', 'v3', developerKey=api_key)
+        return youtube
+
+    @property
+    def channel_id(self):
+        return self.__channel_id
 
     def printj(dict_to_print: dict) -> None:
         """Выводит словарь в json-подобном удобном формате с отступами"""
@@ -19,5 +39,11 @@ class Channel:
     def print_info(self) -> None:
         """Выводит в консоль информацию о канале."""
         youtube = build('youtube', 'v3', developerKey=api_key)
-        channel = youtube.channels().list(id=self.channel_id, part='snippet,statistics').execute()
+        channel = youtube.channels().list(id=self.__channel_id,  part='snippet,statistics').execute()
         Channel.printj(channel)
+
+    def to_json(self, file_name):
+        youtube = build('youtube', 'v3', developerKey=api_key)
+        channel = youtube.channels().list(id=self.__channel_id, part='snippet,statistics').execute()
+        with open(os.path.join(file_name), 'w') as file:
+            file.write(json.dumps(channel, indent=2, ensure_ascii=False))
